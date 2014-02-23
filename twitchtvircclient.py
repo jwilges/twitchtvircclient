@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 """A simple autonomous Twitch.TV IRC client
 
-To instruct this client to connect as <username> with OAuth password <password>
-before joining channel <channel> and listening for commands from <trustedNick>,
-use the following command line parameters:
+To instruct this client to connect as <username> with OAuth access token
+<token> before joining channel <channel> and listening for commands from
+<trustedNick>, use the following command line parameters:
 
-  ./twitchtvircclient.py --trustedNick "<trustedNick>" "<username>" "<password>" "<channel>"
+  ./twitchtvircclient.py --trustedNick "<trustedNick>" "<username>" "<token>" "<channel>"
+
+This application relies on using an OAuth access token[1]. If you need a
+quick way to generate an OAuth token for your Twitch.TV username, you can
+generate one using the interface provided at the following URL:
+
+  http://ifup.us/twitch
+
+This URL may move or disappear in the future, but I will try to update this
+comment when or if that situation arises.
 
 Although this client is incomplete, it demonstrates a simple technique for
 parsing a handful of common Twitch.TV IRC commands. Additionally, it provides
@@ -17,13 +26,14 @@ this together as a quick demonstration, the existing implementation might mis-
 interpret one or more messages produced by Twitch.TV IRC servers.
 
 Unfortunately, the only documentation I could find for the Twitch.TV IRC server
-implementation[1] was somewhat terse on certain implementation details, such as
+implementation[2] was somewhat terse on certain implementation details, such as
 how to determine when authentication information is invalid. I experimented
 once or twice and concluded (for this demo) that receiving a NOTICE message
 before "common" messages with IDs 1-4 was sufficient for me to assume that
 the authentication information was invalid. I could be wrong. :)
 
-[1]: <http://help.twitch.tv/customer/portal/articles/1302780-twitch-irc>"""
+[1]: https://github.com/justintv/Twitch-API/blob/master/authentication.md
+[2]: <http://help.twitch.tv/customer/portal/articles/1302780-twitch-irc>"""
 from __future__ import print_function
 import argparse, re, signal, socket, sys, time
 
@@ -162,7 +172,7 @@ def interruptSignalHandler(signal, frame):
 if __name__ == "__main__":
     argumentParser = argparse.ArgumentParser(description="A simple autonomous Twitch.TV IRC client")
     argumentParser.add_argument("username", help="The Twitch.TV username used by the client during authentication")
-    argumentParser.add_argument("password", help="The Twitch.TV OAuth password used by the client during authentication (excluding \"oauth:\")")
+    argumentParser.add_argument("token", help="The Twitch.TV OAuth token used by the client during authentication (excluding \"oauth:\")")
     argumentParser.add_argument("channel", help="The channel joined after authentication")
     argumentParser.add_argument("--trustedNick", help="An optional \"trusted\" IRC nick that may trigger autonomous commands")
 
@@ -172,7 +182,7 @@ if __name__ == "__main__":
 
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((TWITCHTV_IRC_HOST, TWITCHTV_IRC_PORT))
-    send(clientSocket, "PASS oauth:" + argumentList.password)
+    send(clientSocket, "PASS oauth:" + argumentList.token)
     send(clientSocket, "NICK " + argumentList.username)
 
     authenticated = False
